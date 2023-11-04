@@ -27,12 +27,15 @@ inputs:
     description: 'Create Release Environment label'
     required: false
     default: 'Create Release Environment'
+  reviewer:
+    description: 'Reviewer'
+    required: false
   
 runs:
   using: 'composite'
   steps:
   - name: Checkout parent repository and branch
-    uses: actions/checkout@v2
+    uses: actions/checkout@v3
     with:
       token: ${{ inputs.github_token }}
       repository: ${{ inputs.parent_repository }}
@@ -51,7 +54,7 @@ runs:
       git push --set-upstream origin $GITHUB_RUN_ID
 
   - name: Create pull request against target branch
-    uses: actions/github-script@v5
+    uses: actions/github-script@v6
     with:
       github-token: ${{ inputs.github_token }}
       script: |
@@ -65,7 +68,7 @@ runs:
         });
 
   - name: Add labels
-    uses: actions/github-script@v5
+    uses: actions/github-script@v6
     with:
       github-token: ${{ inputs.github_token }}
       script: |
@@ -80,4 +83,22 @@ runs:
           owner: '${{ inputs.owner }}',
           repo: '${{ inputs.parent_repository }}'.split('/')[1].trim(),
           labels: ['${{ inputs.label }}']
+        });
+
+  - name: Add reviewers
+    uses: actions/github-script@v6
+    with:
+      github-token: ${{ inputs.github_token }}
+      script: |
+        const res = await github.rest.issues.listForRepo({
+          owner: '${{ inputs.owner }}',
+          repo: '${{ inputs.parent_repository }}'.split('/')[1].trim(),
+        });
+        const pr = res.data.filter(i => i.title.includes(process.env.GITHUB_RUN_ID));
+        const prNumber = pr[0].number;  
+        await github.rest.pulls.requestReviewers({
+          pull_number: prNumber,
+          owner: '${{ inputs.owner }}',
+          repo: '${{ inputs.parent_repository }}'.split('/')[1].trim(),
+          reviewers: ['${{ inputs.reviewer }}']
         });
