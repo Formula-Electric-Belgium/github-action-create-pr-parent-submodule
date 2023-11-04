@@ -100,5 +100,5 @@ runs:
           pull_number: prNumber,
           owner: '${{ inputs.owner }}',
           repo: '${{ inputs.parent_repository }}'.split('/')[1].trim(),
-          reviewers: ['${{ inputs.reviewer }}']
+          reviewers: ${{ inputs.reviewer }}
         });
